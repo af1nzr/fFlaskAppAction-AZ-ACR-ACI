@@ -46,17 +46,17 @@ jobs:
       - name: Deploy to ACI
         run: |
           az container create \
-            --resource-group ${{ env.resource_group_name }} \
-            --name ${{ env.aci_name }} \
-            --image ${{ env.acr_name }}.azurecr.io/${{ env.image_name }}:latest \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name ${{ env.ACI_NAME }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
             --cpu 1 \
             --memory 1 \
-            --registry-login-server ${{ env.acr_name }}.azurecr.io \
+            --registry-login-server ${{ env.ACR_NAME }}.azurecr.io \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --dns-name-label ${{ env.aci_name }}-af1n \
+            --dns-name-label ${{ env.ACI_NAME }}-af1n \
             --ports 80 \
             --os-type Linux \
-            --location ${{ env.location }} \
+            --location ${{ env.LOCATION }} \
             --restart-policy Always
 
