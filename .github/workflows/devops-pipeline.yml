@@ -1,0 +1,59 @@
+name: CI/CD - Docker + ACR + ACI
+
+on:
+  push:
+    branches: [main]
+
+env:
+  RESOURCE_GROUP: "Flask-App-Action-RG"
+  IMAGE_NAME: "simple-devops-app"
+  ACR_NAME: "flaskappactionacr"
+  ACI_NAME: "flaskappactionaci"
+  LOCATION: "centralus"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME .
+
+      - name: Tag Docker image
+        run: |
+          docker tag $IMAGE_NAME:latest $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Push Docker image to ACR
+        run: |
+          docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+      - name: Deploy to Azure Container Instance
+        run: |
+          az container create \
+            --resource-group $RESOURCE_GROUP \
+            --name $ACI_NAME \
+            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest \
+            --cpu 1 \
+            --memory 1 \
+            --registry-login-server $ACR_NAME.azurecr.io \
+            --registry-username $(az acr credential show --name $ACR_NAME --query "username" -o tsv) \
+            --registry-password $(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv) \
+            --dns-name-label $ACI_NAME-af1n \
+            --ports 80 \
+            --location $LOCATION
