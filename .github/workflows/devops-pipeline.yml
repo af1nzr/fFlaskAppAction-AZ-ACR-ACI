@@ -43,17 +43,19 @@ jobs:
         run: |
           docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
 
-      - name: Deploy to Azure Container Instance
+      - name: Deploy to ACI
         run: |
           az container create \
-            --resource-group $RESOURCE_GROUP \
-            --name $ACI_NAME \
-            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest \
+            --resource-group ${{ env.resource_group_name }} \
+            --name ${{ env.aci_name }} \
+            --image ${{ env.acr_name }}.azurecr.io/${{ env.image_name }}:latest \
             --cpu 1 \
             --memory 1 \
-            --registry-login-server $ACR_NAME.azurecr.io \
-            --registry-username $(az acr credential show --name $ACR_NAME --query "username" -o tsv) \
-            --registry-password $(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv) \
-            --dns-name-label $ACI_NAME-af1n \
+            --registry-login-server ${{ env.acr_name }}.azurecr.io \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --dns-name-label ${{ env.aci_name }}-af1n \
             --ports 80 \
-            --location $LOCATION
+            --os-type Linux \
+            --location ${{ env.location }}
+
